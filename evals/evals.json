@@ -192,6 +192,35 @@
         "The route handler parses input with a schema, builds a command, calls one application service, and maps the result",
         "Identifiers are branded types or otherwise not interchangeable plain strings"
       ]
+    },
+    {
+      "id": 14,
+      "name": "r11-cross-aggregate-write",
+      "prompt": "Review the TypeScript code in evals/files/review/r11-cross-aggregate-write.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Subtle: everything else is correct (branded IDs, #private aggregate mutation, synchronous transaction, outbox for the Booking event); the real problem is a direct write to the Room aggregate's own table, bypassing Room's aggregate and repository.",
+      "files": [
+        "evals/files/review/r11-cross-aggregate-write.ts"
+      ],
+      "expectations": [
+        "Flags the direct update to the rooms table as bypassing the Room aggregate and its repository",
+        "Rates this HIGH or CRITICAL",
+        "Does not flag the branded identifiers, the synchronous transaction, or the outbox append for the booking event as problems, since those are done correctly",
+        "Recommends routing the room counter change through Room's own aggregate/repository or an asynchronous handler of the booking-moved event, instead of writing the table directly"
+      ]
+    },
+    {
+      "id": 15,
+      "name": "r12-partial-outbox-skip",
+      "prompt": "Review the TypeScript code in evals/files/review/r12-partial-outbox-skip.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Subtle: the unit of work, branded command types, and the aggregate guard are all used correctly; one business branch (no refund owed) saves the aggregate's new state but never appends its pending events to the outbox, so other modules never learn about that cancellation.",
+      "files": [
+        "evals/files/review/r12-partial-outbox-skip.ts"
+      ],
+      "expectations": [
+        "Flags that the no-refund branch calls save() but never calls outbox.append(), so the BookingCancelled event is silently dropped on that path",
+        "Notes this is a control-flow bug in one branch, not a structural layering violation; the unit-of-work and authorization pattern used elsewhere in the function is correct",
+        "Recommends appending the pending events on every path that changes the aggregate, e.g. moving save+outbox-append after the branch so both paths go through it"
+      ]
     }
   ]
 }
