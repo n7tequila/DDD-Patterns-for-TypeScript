@@ -20,6 +20,7 @@ export function composeApp(deps: {
   const sqlite = new Database(deps.dbPath, { create: true });
   sqlite.run("PRAGMA journal_mode = WAL");
   sqlite.run("PRAGMA foreign_keys = ON");
+  sqlite.run("PRAGMA busy_timeout = 5000");
   migrateRoomCatalog(sqlite);
   migrateBooking(sqlite);
   const db = drizzle(sqlite);

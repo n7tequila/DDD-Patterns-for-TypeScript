@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { toRoomId, type RoomId } from "@example/shared-kernel";
-import { Room } from "../domain/room";
+import { Room, toRoomLifecycle } from "../domain/room";
 import type { RoomRepository } from "../application/ports";
 import { rooms } from "./schema";
 
@@ -11,7 +11,7 @@ export class DrizzleRoomRepository implements RoomRepository {
   findById(id: RoomId): Room | undefined {
     const row = this.db.select().from(rooms).where(eq(rooms.id, id)).get();
     if (row === undefined) return undefined;
-    return Room.reconstitute({ id: toRoomId(row.id), name: row.name, capacity: row.capacity, lifecycle: row.lifecycle });
+    return Room.reconstitute({ id: toRoomId(row.id), name: row.name, capacity: row.capacity, lifecycle: toRoomLifecycle(row.lifecycle) });
   }
 
   save(room: Room): void {

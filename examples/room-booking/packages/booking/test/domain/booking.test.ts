@@ -21,6 +21,17 @@ describe("TimeSlot", () => {
   });
 });
 
+describe("identifier errors", () => {
+  test("do not echo the raw input, because messages reach clients", () => {
+    expect(() => toBookingId("<script>alert(1)</script>")).toThrow("BookingId is malformed");
+    try {
+      toBookingId("<script>alert(1)</script>");
+    } catch (error) {
+      expect((error as Error).message).not.toContain("<script>");
+    }
+  });
+});
+
 describe("Booking", () => {
   test("create records BookingConfirmed exactly once", () => {
     const booking = create();

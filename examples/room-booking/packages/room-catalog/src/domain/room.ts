@@ -1,6 +1,13 @@
 import { DomainError, InvalidValueError, type RoomId } from "@example/shared-kernel";
 
-export type RoomLifecycle = "draft" | "active" | "under-maintenance" | "retired";
+const ROOM_LIFECYCLES = ["draft", "active", "under-maintenance", "retired"] as const;
+export type RoomLifecycle = (typeof ROOM_LIFECYCLES)[number];
+
+export function toRoomLifecycle(raw: string): RoomLifecycle {
+  const found = ROOM_LIFECYCLES.find((l) => l === raw);
+  if (found === undefined) throw new InvalidValueError("RoomLifecycle", "unknown lifecycle");
+  return found;
+}
 
 export interface RoomSnapshot {
   readonly id: RoomId;

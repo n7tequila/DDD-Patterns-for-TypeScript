@@ -28,7 +28,7 @@ export const bookings = sqliteTable("bookings", {
 });
 ```
 
-`$type` is compile-time only. The row mapper still rebuilds identifiers and value objects through their constructor functions, so a corrupted row fails loudly:
+`$type` is compile-time only, for enumerations too: a stored status `"bogus"` loads as a `BookingStatus` unless the mapper checks it (verified: before the fix, the example loaded such a row without error). The row mapper rebuilds identifiers, value objects, and enumerations through their constructor functions, so a corrupted row fails loudly:
 
 ```ts
 // booking/src/infrastructure/persistence/booking-row-mapper.ts
@@ -38,7 +38,7 @@ export function fromBookingRow(row: BookingRow): Booking {
     roomId: toRoomId(row.roomId),
     organizer: toMemberId(row.organizer),
     slot: TimeSlot.of(toEpochMillis(row.start), toEpochMillis(row.end)),
-    status: row.status,
+    status: toBookingStatus(row.status),
     version: row.version,
   });
 }
@@ -77,6 +77,8 @@ export class DrizzleUnitOfWork implements UnitOfWork {
 }
 ```
 
+Start every transaction as `IMMEDIATE` (`db.transaction(callback, { behavior: "immediate" })`) and set `PRAGMA busy_timeout`, so read-then-write use cases hold the write lock from their first read. The option exists in Drizzle 0.45.4's SQLite transaction config.
+
 Three guards:
 
 - `NotPromise<T>` on the port: an `async` callback does not compile (fact 1).
@@ -112,6 +114,8 @@ const updated = tx
   .all();
 if (updated.length !== 1) throw new OptimisticLockError(row.id);
 ```
+
+The aggregate in memory keeps the version it was loaded with. Load, change, and save an aggregate within one transaction; saving the same instance again in a later transaction is rejected as stale, which is the intended behavior.
 
 ## Outbox
 
@@ -160,6 +164,8 @@ Compile the migrations into the program instead:
    ```
 
 3. Each context exports `migrateBooking(sqlite)` (or its own equivalent) from its entry point, and the composition root calls them at startup.
+
+4. The generated file also imports the journal and exports its tags. Before applying anything, `migrateEmbedded` compares them with the embedded list and refuses to start on any difference. Running `drizzle-kit generate` without the embed step would otherwise leave the new migration out of the binary, with no error until a request hit the missing table. A test per context makes the same comparison, so CI fails first.
 
 TypeScript needs `"resolveJsonModule": true` for the journal and a `declare module "*.sql"` declaration for the text imports. Verified: the compiled program, run where no `drizzle/` folder exists, created the schema on first start and applied nothing on the second.
 

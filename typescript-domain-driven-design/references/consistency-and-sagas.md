@@ -101,7 +101,7 @@ export class BookRoom {
 
 Points to notice:
 
-- The overlap check and the insert happen in the same transaction. With SQLite, transactions are serialized, so no other booking can slip in between; with databases that allow concurrent writers, back the rule with a constraint or a lock and translate the violation into `SlotTaken`.
+- The overlap check and the insert happen in the same transaction. That is enough only if the transaction holds the write lock before it reads. In SQLite, start it as `IMMEDIATE` and set `busy_timeout`: a default (`DEFERRED`) transaction reads first and asks for the lock only at the first write, so a second connection that wrote in between makes it fail with `SQLITE_BUSY`. Within one connection, Bun's synchronous transactions cannot interleave at all. With databases that allow concurrent writers, back the rule with a constraint or a lock and translate the violation into `SlotTaken`.
 - The room information read before the transaction may be stale by the time of the write. That is acceptable here because a room retired a moment ago is a business-tolerable race; when it is not, move the check into the same database or make it an invariant of an aggregate that owns both facts.
 - The outbox writer converts domain events into published contracts (see [contracts-and-published-language.md](./contracts-and-published-language.md)) before storing them.
 
@@ -114,6 +114,7 @@ A relay process reads committed outbox rows and delivers them. It has three defe
 | Timing | Events are written in the business transaction; the relay reads only committed rows | Side effects for changes that were rolled back |
 | Isolation | Each delivery and its "mark as sent" run in their own transaction, opened by the relay through the unit of work | A failing side effect corrupting or blocking the business write |
 | Containment | The relay catches each delivery's failure, records it, retries with backoff, and keeps running | One bad message stopping all others, or crashing the process |
+| Re-entrancy | A run that starts while the previous one is still delivering is skipped | A timer firing faster than delivery handing the same row to two concurrent runs |
 
 Consumers must be idempotent by `eventId`, because the relay delivers at least once.
 

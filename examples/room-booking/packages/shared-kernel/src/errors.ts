@@ -4,8 +4,9 @@ export abstract class DomainError extends Error {
 
 export class InvalidIdentifierError extends DomainError {
   readonly code = "INVALID_IDENTIFIER";
-  constructor(kind: string, raw: string) {
-    super(`${kind} is malformed: ${raw}`);
+  /** The raw value is deliberately not part of the message: messages reach clients. */
+  constructor(kind: string) {
+    super(`${kind} is malformed`);
   }
 }
 

@@ -1,9 +1,17 @@
-import type { EpochMillis, MemberId, MemberRole, RoomId } from "@example/shared-kernel";
+import { InvalidValueError, type EpochMillis, type MemberId, type MemberRole, type RoomId } from "@example/shared-kernel";
 import { BookingRuleViolation } from "./errors";
 import type { BookingId } from "./ids";
 import type { TimeSlot } from "./time-slot";
 
-export type BookingStatus = "confirmed" | "checked-in" | "cancelled";
+const BOOKING_STATUSES = ["confirmed", "checked-in", "cancelled"] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+/** Rebuilds a status read from storage; `$type<BookingStatus>()` on the column is compile-time only. */
+export function toBookingStatus(raw: string): BookingStatus {
+  const found = BOOKING_STATUSES.find((s) => s === raw);
+  if (found === undefined) throw new InvalidValueError("BookingStatus", "unknown status");
+  return found;
+}
 
 export type BookingEvent =
   | { readonly type: "BookingConfirmed"; readonly bookingId: BookingId; readonly roomId: RoomId; readonly slot: TimeSlot }

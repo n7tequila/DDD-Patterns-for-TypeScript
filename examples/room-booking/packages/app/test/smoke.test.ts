@@ -51,7 +51,7 @@ describe("composed app", () => {
     const cancelled = await ctx.app.request(`/bookings/${bookingId}/cancel`, { method: "POST", headers: ALICE });
     expect(cancelled.status).toBe(200);
 
-    expect(await ctx.relay.relayOnce()).toEqual({ sent: 2, failed: 0 });
+    expect(await ctx.relay.relayOnce()).toEqual({ sent: 2, failed: 0, skipped: false });
     expect(delivered.map((e) => (e as { type: string }).type)).toEqual(["booking.confirmed", "booking.cancelled"]);
   });
 

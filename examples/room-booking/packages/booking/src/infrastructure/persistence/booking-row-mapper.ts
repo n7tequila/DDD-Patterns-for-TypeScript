@@ -1,5 +1,5 @@
 import { toEpochMillis, toMemberId, toRoomId } from "@example/shared-kernel";
-import { Booking } from "../../domain/booking";
+import { Booking, toBookingStatus } from "../../domain/booking";
 import { toBookingId } from "../../domain/ids";
 import { TimeSlot } from "../../domain/time-slot";
 import type { bookings } from "./schema";
@@ -13,7 +13,7 @@ export function fromBookingRow(row: BookingRow): Booking {
     roomId: toRoomId(row.roomId),
     organizer: toMemberId(row.organizer),
     slot: TimeSlot.of(toEpochMillis(row.start), toEpochMillis(row.end)),
-    status: row.status,
+    status: toBookingStatus(row.status),
     version: row.version,
   });
 }

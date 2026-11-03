@@ -28,6 +28,8 @@ export class OptimisticLockError extends Error {
 /**
  * The only way into a transaction. The callback must be synchronous (NotPromise), and the scope it
  * receives refuses to work once the transaction has ended, so a leaked handle cannot write outside it.
+ * IMMEDIATE takes the write lock before the first read, so a read-then-write use case (the overlap check)
+ * cannot interleave with another connection's write; set PRAGMA busy_timeout so contenders wait instead of failing.
  */
 export class DrizzleUnitOfWork implements UnitOfWork {
   constructor(
@@ -44,7 +46,7 @@ export class DrizzleUnitOfWork implements UnitOfWork {
       } finally {
         guard.open = false;
       }
-    });
+    }, { behavior: "immediate" });
   }
 
   #scope(tx: Tx, guard: { open: boolean }): TransactionScope {

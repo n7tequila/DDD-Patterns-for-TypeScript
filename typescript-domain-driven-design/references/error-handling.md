@@ -53,6 +53,7 @@ Callers handle a `Result` with an exhaustive `switch` on `error.kind` ending in 
 - Keep `catch` blocks narrow. Catch a specific code, translate it, and rethrow everything else. Never `catch {}` and continue.
 - With `useUnknownInCatchVariables`, the caught value is `unknown`; narrow it before use.
 - Map every failure to a response in one place in the interfaces layer: `Result` failures by `kind`, thrown errors by `code`, unknown errors to a generic 500 without internal details.
+- Never put raw client input into an error message: messages reach clients through the error mapping, and echoing input reflects arbitrary content back. Say which field is wrong, not what it contained.
 - Keep messages for logs and codes for clients. Clients receive a stable code and a safe message; stack traces and internal identifiers stay in logs.
 - Do not use exceptions for control flow inside the domain, and do not use `Result` for invariant violations.
 

@@ -7,20 +7,25 @@ import { Booking } from "../../src/domain/booking";
 import { toBookingId } from "../../src/domain/ids";
 import { OutboxRelay } from "../../src/infrastructure/messaging/outbox-relay";
 import { DrizzleUnitOfWork, OptimisticLockError, TransactionClosedError } from "../../src/infrastructure/persistence/drizzle-unit-of-work";
+import { assertMigrationsMatchJournal, MigrationDriftError } from "@example/sqlite-support";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { migrateBooking } from "../../src/infrastructure/migrate";
+import { JOURNAL_TAGS, MIGRATIONS } from "../../src/infrastructure/migrations.generated";
 import { bookings, outbox } from "../../src/infrastructure/persistence/schema";
 import { ALICE, NOW, ROOM, fixedClock, sequentialIds, slotFromNow } from "../fixtures";
 
 let db: BunSQLiteDatabase;
+let raw: Database;
 let uow: DrizzleUnitOfWork;
 const count = (table: typeof bookings | typeof outbox): number => db.select({ n: sql<number>`count(*)` }).from(table).get()?.n ?? -1;
 const newBooking = (n: number, startHours = 2) =>
   Booking.create({ id: toBookingId(`20000000-0000-4000-8000-${String(n).padStart(12, "0")}`), roomId: ROOM, organizer: ALICE, slot: slotFromNow(startHours) }, NOW);
 
 beforeEach(() => {
-  const sqlite = new Database(":memory:");
-  migrateBooking(sqlite);
-  db = drizzle(sqlite);
+  raw = new Database(":memory:");
+  migrateBooking(raw);
+  db = drizzle(raw);
   uow = new DrizzleUnitOfWork(db, fixedClock(), sequentialIds("30000000-0000-4000-8000-"));
 });
 
@@ -74,7 +79,47 @@ describe("DrizzleUnitOfWork", () => {
   });
 });
 
+describe("reading corrupted rows", () => {
+  test("an unknown status in storage fails loudly instead of entering the aggregate", () => {
+    raw.run(
+      "INSERT INTO bookings VALUES ('20000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000a11c', 5000000000, 5003600000, 'bogus', 0)",
+    );
+    expect(() => uow.run((scope) => scope.bookings.findById(toBookingId("20000000-0000-4000-8000-000000000001")))).toThrow("unknown status");
+  });
+});
+
+describe("transaction locking", () => {
+  test("IMMEDIATE: while another connection holds the write lock, the use case never starts reading", () => {
+    const file = join(tmpdir(), `uow-lock-${crypto.randomUUID()}.db`);
+    const a = new Database(file);
+    migrateBooking(a);
+    a.run("PRAGMA busy_timeout = 0");
+    const b = new Database(file);
+    b.run("BEGIN IMMEDIATE");
+    const lockedUow = new DrizzleUnitOfWork(drizzle(a), fixedClock(), sequentialIds());
+    let entered = false;
+    expect(() =>
+      lockedUow.run((scope) => {
+        entered = true;
+        return scope.bookings.existsOverlapping(ROOM, slotFromNow(2));
+      }),
+    ).toThrow();
+    expect(entered).toBe(false);
+    b.run("ROLLBACK");
+    a.close();
+    b.close();
+  });
+});
+
 describe("embedded migrations", () => {
+  test("the embedded list matches the drizzle-kit journal", () => {
+    expect(MIGRATIONS.map((m) => m.tag)).toEqual([...JOURNAL_TAGS]);
+  });
+
+  test("a journal entry without an embedded migration is refused", () => {
+    expect(() => assertMigrationsMatchJournal("booking", MIGRATIONS, [...JOURNAL_TAGS, "0001_forgotten"])).toThrow(MigrationDriftError);
+  });
+
   test("apply once, are skipped on the next run, and create the overlap index", () => {
     const sqlite = new Database(":memory:");
     expect(migrateBooking(sqlite)).toHaveLength(1);
@@ -85,6 +130,29 @@ describe("embedded migrations", () => {
 });
 
 describe("OutboxRelay", () => {
+  test("a run that starts while another is delivering is skipped", async () => {
+    uow.run((scope) => {
+      const b = newBooking(1);
+      scope.bookings.save(b);
+      scope.outbox.append(b.pullPendingEvents());
+    });
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let deliveries = 0;
+    const relay = new OutboxRelay(db, async () => {
+      deliveries += 1;
+      await gate;
+    }, fixedClock());
+    const first = relay.relayOnce();
+    const second = await relay.relayOnce();
+    release();
+    expect(second).toEqual({ sent: 0, failed: 0, skipped: true });
+    expect(await first).toEqual({ sent: 1, failed: 0, skipped: false });
+    expect(deliveries).toBe(1);
+  });
+
   test("delivers each committed event once and records failures without stopping", async () => {
     uow.run((scope) => {
       for (const n of [1, 2]) {
@@ -100,9 +168,9 @@ describe("OutboxRelay", () => {
       if (calls === 1) throw new Error("broker down");
       delivered.push(payload);
     }, fixedClock());
-    expect(await relay.relayOnce()).toEqual({ sent: 1, failed: 1 });
-    expect(await relay.relayOnce()).toEqual({ sent: 1, failed: 0 });
-    expect(await relay.relayOnce()).toEqual({ sent: 0, failed: 0 });
+    expect(await relay.relayOnce()).toEqual({ sent: 1, failed: 1, skipped: false });
+    expect(await relay.relayOnce()).toEqual({ sent: 1, failed: 0, skipped: false });
+    expect(await relay.relayOnce()).toEqual({ sent: 0, failed: 0, skipped: false });
     expect(delivered).toHaveLength(2);
   });
 });

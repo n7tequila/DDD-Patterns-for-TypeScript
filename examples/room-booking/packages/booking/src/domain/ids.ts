@@ -3,6 +3,6 @@ import { InvalidIdentifierError, isIdentifier, type Brand } from "@example/share
 export type BookingId = Brand<string, "BookingId">;
 
 export function toBookingId(raw: string): BookingId {
-  if (!isIdentifier(raw)) throw new InvalidIdentifierError("BookingId", raw);
+  if (!isIdentifier(raw)) throw new InvalidIdentifierError("BookingId");
   return raw as BookingId;
 }

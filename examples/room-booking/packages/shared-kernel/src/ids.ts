@@ -12,11 +12,11 @@ export function isIdentifier(raw: string): boolean {
 }
 
 export function toRoomId(raw: string): RoomId {
-  if (!isIdentifier(raw)) throw new InvalidIdentifierError("RoomId", raw);
+  if (!isIdentifier(raw)) throw new InvalidIdentifierError("RoomId");
   return raw as RoomId;
 }
 
 export function toMemberId(raw: string): MemberId {
-  if (!isIdentifier(raw)) throw new InvalidIdentifierError("MemberId", raw);
+  if (!isIdentifier(raw)) throw new InvalidIdentifierError("MemberId");
   return raw as MemberId;
 }

@@ -39,6 +39,10 @@ The HTTP server and configuration live in the app package; the interfaces layer 
 
 Ready-to-copy configurations are in [enforcement.md](./enforcement.md) and the `assets/` folder.
 
+## What Changes When The Runtime Changes
+
+Domain and application code do not change. Infrastructure adapters are replaced. Each context's module factory and migration function change their signatures too, because they take the runtime's database handle (for example `BunSQLiteDatabase` or a `bun:sqlite` `Database`). That is expected: they sit on the infrastructure boundary, not in the core. Keep runtime types out of ports, commands, results, and facades.
+
 ## Tests
 
 - Domain and application tests use fixed clocks, sequential ID generators, and in-memory adapters; they never touch the runtime.

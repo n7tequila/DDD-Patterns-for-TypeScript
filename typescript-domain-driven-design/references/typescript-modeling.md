@@ -23,17 +23,17 @@ export type MemberId = Brand<string, "MemberId">;
 const ID_PATTERN = /^[0-9a-f-]{36}$/;
 
 export function toBookingId(raw: string): BookingId {
-  if (!ID_PATTERN.test(raw)) throw new InvalidIdentifierError("BookingId", raw);
+  if (!ID_PATTERN.test(raw)) throw new InvalidIdentifierError("BookingId");
   return raw as BookingId;
 }
 
 export function toRoomId(raw: string): RoomId {
-  if (!ID_PATTERN.test(raw)) throw new InvalidIdentifierError("RoomId", raw);
+  if (!ID_PATTERN.test(raw)) throw new InvalidIdentifierError("RoomId");
   return raw as RoomId;
 }
 
 export function toMemberId(raw: string): MemberId {
-  if (!ID_PATTERN.test(raw)) throw new InvalidIdentifierError("MemberId", raw);
+  if (!ID_PATTERN.test(raw)) throw new InvalidIdentifierError("MemberId");
   return raw as MemberId;
 }
 ```
@@ -54,7 +54,7 @@ Use a class with `readonly` fields, a private constructor, a validating factory,
 export type EpochMillis = Brand<number, "EpochMillis">;
 
 export function toEpochMillis(raw: number): EpochMillis {
-  if (!Number.isSafeInteger(raw) || raw < 0) throw new InvalidValueError("EpochMillis", String(raw));
+  if (!Number.isSafeInteger(raw) || raw < 0) throw new InvalidValueError("EpochMillis", "must be a non-negative safe integer");
   return raw as EpochMillis;
 }
 
@@ -204,7 +204,7 @@ export class Booking {
 Rules:
 
 - Two construction paths. `create` validates every rule, including creation-time policies such as "must start in the future", and records events. `reconstitute` rebuilds stored state and records no events.
-- `reconstitute` does not re-run creation-time policies: stored data may legitimately fail them later (time passes, policies change). It does rely on value objects, which reject structurally impossible data, such as a slot whose end precedes its start. Repositories rebuild value objects through their factories, so corrupted rows fail loudly instead of entering the model.
+- `reconstitute` does not re-run creation-time policies: stored data may legitimately fail them later (time passes, policies change). It does rely on value objects, which reject structurally impossible data, such as a slot whose end precedes its start. Repositories rebuild value objects and enumerations through their factories (including a `toBookingStatus` for the status union), so corrupted rows fail loudly instead of entering the model.
 - Both `#private` and the `private` keyword make the class nominal at compile time. Prefer `#private` because only it is private at runtime: a `private` keyword field is still readable and writable through bracket access, casts, or plain JavaScript, and `JSON.stringify` includes it.
 - Getters return values or read-only views. Never return an internal array or object that the caller could mutate.
 - Domain methods are synchronous and do no I/O. Data the method needs is passed in by the application service.
@@ -288,8 +288,9 @@ export abstract class DomainError extends Error {
 
 export class InvalidIdentifierError extends DomainError {
   readonly code = "INVALID_IDENTIFIER";
-  constructor(kind: string, raw: string) {
-    super(`${kind} is malformed: ${raw}`);
+  /** The raw value is deliberately not part of the message: messages reach clients. */
+  constructor(kind: string) {
+    super(`${kind} is malformed`);
   }
 }
 
