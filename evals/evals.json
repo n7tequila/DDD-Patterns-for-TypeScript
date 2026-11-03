@@ -1,0 +1,197 @@
+{
+  "skill_name": "typescript-domain-driven-design",
+  "evals": [
+    {
+      "id": 1,
+      "name": "r00-clean-control",
+      "prompt": "Review the TypeScript code in evals/files/review/r00-clean-control.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Compliant control sample: no CRITICAL or HIGH findings.",
+      "files": [
+        "evals/files/review/r00-clean-control.ts"
+      ],
+      "expectations": [
+        "The review reports no CRITICAL finding",
+        "The review reports no HIGH finding",
+        "Any finding it reports is supported by quoted evidence from the file rather than speculation"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "r01-structural-ids",
+      "prompt": "Review the TypeScript code in evals/files/review/r01-structural-ids.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Identifier classes with only public fields are structurally interchangeable; a BookingId is passed where a MemberId is expected, so ownership can be decided by the wrong identifier.",
+      "files": [
+        "evals/files/review/r01-structural-ids.ts"
+      ],
+      "expectations": [
+        "Flags BookingId and MemberId as interchangeable because TypeScript compares classes structurally",
+        "Points to the call that passes a BookingId where a MemberId (owner) is expected",
+        "Rates this CRITICAL or HIGH",
+        "Recommends branded identifier types created only by constructor functions, or #private state"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "r02-publish-after-save",
+      "prompt": "Review the TypeScript code in evals/files/review/r02-publish-after-save.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Events published after save outside the transaction, and publish() is not awaited.",
+      "files": [
+        "evals/files/review/r02-publish-after-save.ts"
+      ],
+      "expectations": [
+        "Flags publishing events after save, outside the transaction that saved the aggregate, as CRITICAL",
+        "Recommends writing events to an outbox in the same transaction and delivering after commit",
+        "Flags the un-awaited bus.publish call as a floating promise",
+        "Rates the floating promise HIGH or higher"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "r03-async-transaction",
+      "prompt": "Review the TypeScript code in evals/files/review/r03-async-transaction.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Async callback passed to a synchronous bun:sqlite transaction, with a remote call awaited inside.",
+      "files": [
+        "evals/files/review/r03-async-transaction.ts"
+      ],
+      "expectations": [
+        "Flags the async transaction callback as CRITICAL",
+        "Explains that with a synchronous driver the transaction commits when the async callback returns its promise, so later failures do not roll back",
+        "Flags the awaited remote call (notifyCalendar) inside the transaction",
+        "Recommends doing asynchronous work before the transaction and using a synchronous unit of work"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "r04-leaked-transaction",
+      "prompt": "Review the TypeScript code in evals/files/review/r04-leaked-transaction.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "A transaction handle is stored in a field and used after the transaction ended.",
+      "files": [
+        "evals/files/review/r04-leaked-transaction.ts"
+      ],
+      "expectations": [
+        "Flags storing the transaction handle beyond its callback as CRITICAL",
+        "Explains that writes through the leaked handle happen outside any transaction",
+        "Recommends a unit of work whose scope refuses to work after the transaction ends, or doing all writes inside the callback"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "r05-handler-logic",
+      "prompt": "Review the TypeScript code in evals/files/review/r05-handler-logic.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Route handler derives roles, checks ownership and state, mutates the aggregate, fills a business default, and calls the repository.",
+      "files": [
+        "evals/files/review/r05-handler-logic.ts"
+      ],
+      "expectations": [
+        "Flags business logic in the route handler as CRITICAL",
+        "Flags the handler calling the repository and mutating booking.status directly",
+        "Flags the role derived from the header suffix (endsWith('@admin')) or the ownership check in the handler as authorization outside the aggregate",
+        "Flags the USD default as a business default in the wrong layer",
+        "Flags that the interfaces layer imports infrastructure"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "r06-unparsed-cast",
+      "prompt": "Review the TypeScript code in evals/files/review/r06-unparsed-cast.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Request body cast without parsing; strings cast to branded identifiers.",
+      "files": [
+        "evals/files/review/r06-unparsed-cast.ts"
+      ],
+      "expectations": [
+        "Flags the unparsed `as CreateBookingBody` cast of the request body as CRITICAL",
+        "Flags the casts to RoomId and MemberId outside constructor functions",
+        "Recommends a schema parse (for example zod safeParse) at the boundary and constructor functions for identifiers",
+        "Notes that the organizer is taken from the request body instead of the authenticated identity"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "r07-domain-imports",
+      "prompt": "Review the TypeScript code in evals/files/review/r07-domain-imports.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Domain imports zod and uses Date.now and crypto.randomUUID.",
+      "files": [
+        "evals/files/review/r07-domain-imports.ts"
+      ],
+      "expectations": [
+        "Flags the zod import in the domain",
+        "Flags Date.now() in the domain and recommends an injected clock",
+        "Flags crypto.randomUUID() in the domain and recommends an injected ID generator",
+        "Rates the domain dependency problem CRITICAL or HIGH"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "r08-role-only-auth",
+      "prompt": "Review the TypeScript code in evals/files/review/r08-role-only-auth.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Cancel use case checks only the role; any member can cancel any booking.",
+      "files": [
+        "evals/files/review/r08-role-only-auth.ts"
+      ],
+      "expectations": [
+        "Flags that any member can cancel any booking because only the role is checked",
+        "Rates it CRITICAL",
+        "Recommends a guard method on the aggregate (for example canBeCancelledBy) called before the change"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "r09-enum-trust",
+      "prompt": "Review the TypeScript code in evals/files/review/r09-enum-trust.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Status column passed into the aggregate unchecked; $type is compile-time only.",
+      "files": [
+        "evals/files/review/r09-enum-trust.ts"
+      ],
+      "expectations": [
+        "Flags that row.status is passed into the aggregate without validation",
+        "Explains that the ORM column type is compile-time only, so a corrupted value would enter the model",
+        "Recommends a constructor function that rejects unknown statuses"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "r10-anemic",
+      "prompt": "Review the TypeScript code in evals/files/review/r10-anemic.ts for Domain-Driven Design problems. Report findings ordered by severity (CRITICAL, HIGH, MEDIUM, LOW), each with location, evidence, and a concrete fix. Do not modify the file.",
+      "expected_output": "Aggregate is a mutable interface; all rules live in a service.",
+      "files": [
+        "evals/files/review/r10-anemic.ts"
+      ],
+      "expectations": [
+        "Flags the anemic domain model as CRITICAL",
+        "Flags that cancel has no rules at all (no ownership or state check)",
+        "Recommends moving check-in and cancel rules into aggregate methods with private state"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "design-library-lending",
+      "prompt": "Design a TypeScript backend for a library lending service as a modular monolith on Bun with Hono and Drizzle on SQLite. Members borrow and return copies of books, can reserve a book that is out (first come, first served), and pay a fine when they return late. Give the bounded contexts, aggregates and invariants, the folder or workspace layout, and the key code for the borrow use case: domain, application service, repository port, and the Drizzle adapter.",
+      "expected_output": "An implementation-ready design that applies the TypeScript-specific rules.",
+      "files": [],
+      "expectations": [
+        "Identifiers (member, copy, loan or similar) use distinct branded types, not plain string",
+        "The aggregate is a class whose state is private (#private fields or equivalent) and changed through business methods",
+        "Loading from storage is separate from creation (reconstitute or equivalent records no events)",
+        "The borrow application service does not perform asynchronous work inside the database transaction",
+        "Events are written to an outbox in the same transaction as the aggregate",
+        "The domain gets the current time from an injected clock rather than Date.now()",
+        "Expected business failures (for example copy not available) are returned as a typed result rather than generic thrown Error",
+        "Layer or import rules are stated and enforcement tooling is mentioned (for example dependency-cruiser)"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "code-cancel-reservation",
+      "prompt": "Using Drizzle on bun:sqlite and Hono, implement a cancel-reservation use case for a room booking backend: only the member who made the reservation or an admin may cancel; cancelling must also record a ReservationCancelled event for other modules. Show the aggregate method, the application service, the transaction handling, and the route handler.",
+      "expected_output": "Working code that keeps authorization in the aggregate and the event in the outbox within a synchronous transaction.",
+      "files": [],
+      "expectations": [
+        "The ownership or admin check is a method on the aggregate, not in the route handler",
+        "The transaction callback passed to Drizzle is synchronous (no async callback, no await inside)",
+        "The event is written to an outbox in the same transaction as the reservation change",
+        "The route handler parses input with a schema, builds a command, calls one application service, and maps the result",
+        "Identifiers are branded types or otherwise not interchangeable plain strings"
+      ]
+    }
+  ]
+}
