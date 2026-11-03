@@ -51,7 +51,7 @@ Rules:
 - Repositories and the outbox writer inside a transaction are synchronous. They are created by the unit of work for that one transaction and are bound to it.
 - `NotPromise<T>` turns an `async` callback into a compile error.
 - The scope object is the only thing the callback receives; it carries no raw transaction handle.
-- The binding in [bindings/drizzle.md](./bindings/drizzle.md) implements this port.
+- The binding in [bindings/drizzle.md](./bindings/drizzle.md) implements this port and also closes the scope when the transaction ends, so a leaked scope throws instead of committing outside the transaction.
 
 ## Outbox
 

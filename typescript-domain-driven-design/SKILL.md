@@ -96,8 +96,8 @@ Enforce these dependency rules:
 - `domain` imports only the TypeScript standard library and the shared kernel. No framework, ORM, validation library, HTTP type, or runtime-specific module.
 - `application` imports `domain` only, plus port interfaces it defines itself.
 - `infrastructure` imports `application` and `domain`, and implements their ports.
-- `interfaces` (HTTP routes, CLI, message consumers) imports `application` only, never repositories or aggregates for write workflows.
-- Another bounded context is reached only through its public entry point: its application facade or its published contracts. Deep imports into another context are forbidden.
+- `interfaces` (HTTP routes, CLI, message consumers) imports `application`, plus domain identifier constructors, value objects, and errors to build commands. Never infrastructure, repositories, or aggregate methods.
+- Another bounded context is reached only through its public entry point: a module factory, its application facade, and its published contracts. Deep imports into another context are forbidden.
 - Domain and application code use only ECMAScript built-ins such as `Math`, `Array`, `Map`, `JSON`, and `Intl`. Runtime-specific APIs (`Bun.*`, every `bun:*` and `node:*` module, including pure computation such as `node:crypto`) and platform globals that do I/O or read time or randomness (`fetch`, `crypto`, `setTimeout`, `setInterval`, `performance`, `Date.now`) appear only in infrastructure adapters; those capabilities reach the core through injected ports. See [references/runtime-portability.md](./references/runtime-portability.md).
 
 Enforce these rules with tooling, not discipline. Read [references/enforcement.md](./references/enforcement.md) for the strict `tsconfig`, dependency-cruiser rules, lint rules, and architecture tests; ready-to-copy files live in [assets/](./assets/).

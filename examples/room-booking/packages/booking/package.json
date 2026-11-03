@@ -1,0 +1,16 @@
+{
+  "name": "@example/booking",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@example/shared-kernel": "workspace:*",
+    "@example/contracts": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.16",
+    "zod": "4.6.7",
+    "@example/sqlite-support": "workspace:*"
+  }
+}

@@ -20,6 +20,6 @@ cat > "$OUT/tsconfig.json" <<'JSON'
 JSON
 cd "$OUT"
 bun add zod@4 >/dev/null 2>&1
-bun add -d typescript@7 >/dev/null 2>&1
+bun add -d typescript@6.0.3 >/dev/null 2>&1
 ./node_modules/.bin/tsc -p . && echo "snippets (${#FILES[@]} references) + guards: tsc strict OK"
 bun run guards.ts

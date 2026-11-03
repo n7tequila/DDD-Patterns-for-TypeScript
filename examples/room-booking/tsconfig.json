@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.strict.json",
+  "compilerOptions": { "types": ["bun"], "resolveJsonModule": true },
+  "include": ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "sql.d.ts"]
+}

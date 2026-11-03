@@ -57,11 +57,14 @@ Root `package.json`:
     "typecheck": "tsc -p .",
     "test": "bun test",
     "deps": "depcruise packages --config .dependency-cruiser.cjs",
-    "check": "bun run typecheck && bun run deps && bun run test"
+    "lint": "eslint packages",
+    "check": "bun run typecheck && bun run deps && bun run lint && bun run test"
   },
   "devDependencies": {
-    "typescript": "^7.0.2",
-    "dependency-cruiser": "^18.7.2"
+    "typescript": "~6.0.3",
+    "dependency-cruiser": "^18.7.2",
+    "eslint": "^10.14.0",
+    "typescript-eslint": "^8.72.1"
   }
 }
 ```
@@ -83,12 +86,14 @@ A context package:
 
 Rules:
 
-- `"exports"` lists only the public entry point. With it, `import { x } from "@acme/booking/src/domain/ids"` fails to resolve in both Bun and `tsc` (`moduleResolution: "bundler"`). Verified with Bun 1.3.12 and TypeScript 7.0.2.
+- `"exports"` lists only the public entry point. With it, `import { x } from "@acme/booking/src/domain/ids"` fails to resolve in both Bun and `tsc` (`moduleResolution: "bundler"`). Verified with Bun 1.3.12 and TypeScript 7.0.2 and 6.0.3.
 - `"exports"` does not stop a relative path such as `../../booking/src/domain/ids`. dependency-cruiser must forbid imports that cross package folders without going through the package name.
 - Packages point `"exports"` straight at TypeScript source. Bun runs it directly and `bun build --compile` bundles it; no per-package build step is needed.
 - Use `workspace:*` for internal dependencies so the lockfile never pins an internal package to a stale version.
 
 ## Type Checking
+
+Pin TypeScript to 6.0.x while dependency-cruiser and typescript-eslint do not support TypeScript 7 (see [enforcement.md](./enforcement.md)).
 
 Start with one root `tsconfig.json` that includes every package and holds the strict flags from [enforcement.md](./enforcement.md):
 

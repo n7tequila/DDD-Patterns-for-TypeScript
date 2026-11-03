@@ -1,0 +1,23 @@
+{
+  "name": "room-booking-example",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "deps": "depcruise packages --config .dependency-cruiser.cjs",
+    "lint": "eslint packages",
+    "test": "bun test",
+    "db:generate": "(cd packages/booking && drizzle-kit generate --name \"${NAME:-change}\") && (cd packages/room-catalog && drizzle-kit generate --name \"${NAME:-change}\") && bun scripts/embed-migrations.ts",
+    "build": "bun build --compile packages/app/src/main.ts --outfile dist/room-booking",
+    "check": "bun run typecheck && bun run deps && bun run lint && bun run test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "dependency-cruiser": "18.7.2",
+    "drizzle-kit": "0.31.11",
+    "eslint": "10.14.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1"
+  }
+}

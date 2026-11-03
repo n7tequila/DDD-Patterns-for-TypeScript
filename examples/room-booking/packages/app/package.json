@@ -1,0 +1,14 @@
+{
+  "name": "@example/app",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@example/shared-kernel": "workspace:*",
+    "@example/booking": "workspace:*",
+    "@example/room-catalog": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.16",
+    "zod": "4.6.7",
+    "@example/sqlite-support": "workspace:*"
+  }
+}

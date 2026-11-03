@@ -8,7 +8,8 @@ Use a feature-oriented layout inside each bounded context. One context is one wo
 booking/
   package.json                     # "exports" points only at src/index.ts
   src/
-    index.ts                       # the public entry point: facade and published contracts
+    index.ts                       # the public entry point: module factory, facade types, published contracts
+    module.ts                      # module factory: wires this context from runtime-level dependencies
     domain/
       ids.ts                       # BookingId, RoomId, MemberId and their constructors
       time-slot.ts                 # value object
@@ -55,7 +56,8 @@ When a context integrates with a foreign model, put the client, the foreign payl
 
 Each context exposes exactly one entry point, `src/index.ts`, and its `package.json` declares only that entry in `"exports"`.
 
-- Export the application facade, the command and result types callers need, and the published contracts.
+- Export a module factory (`createBookingModule(deps)`) that takes runtime-level dependencies (database handle, clock, ID generator, clients of other contexts) and wires the context's own internals. The composition root calls it and never imports the context's infrastructure.
+- Export the facade and route types callers need, the command and result types, and the context's migration function, which the composition root calls at startup.
 - Do not export aggregates, repositories, ORM schemas, or infrastructure classes.
 - Do not use barrel files inside a context to re-export everything; they hide the import graph and create cycles. The single public `index.ts` is the only barrel.
 
@@ -65,12 +67,12 @@ Deep imports such as `booking/src/domain/booking` from another package are forbi
 
 Keep imports pointing inward toward domain intent:
 
-- `interfaces -> application`
+- `interfaces -> application`, plus domain identifier constructors, value objects, and errors for building commands
 - `infrastructure -> application, domain`
 - `application -> domain`
 - `domain -> shared kernel only`
 
-The composition root, in the app package, is the only place that imports infrastructure from several contexts and wires it together.
+The composition root, in the app package, is the only place that creates runtime adapters (database, server, clock) and hands them to each context's module factory.
 
 Avoid cyclic dependencies between bounded contexts. Use facades, published events, or anti-corruption layers.
 
