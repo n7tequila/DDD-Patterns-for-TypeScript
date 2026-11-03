@@ -1,0 +1,4 @@
+interface:
+  display_name: "TypeScript Domain-Driven Design"
+  short_description: "Design and review TypeScript DDD systems and bounded contexts."
+  default_prompt: "Use $typescript-domain-driven-design to design a TypeScript modular monolith with bounded contexts, aggregates, branded IDs, ACLs, contracts, query models, an outbox, and clear domain-application-infrastructure boundaries."
