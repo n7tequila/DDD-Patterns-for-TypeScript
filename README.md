@@ -4,7 +4,15 @@ A Claude Code / Codex skill for designing, implementing, and reviewing TypeScrip
 
 It is the TypeScript counterpart of [DDD-Patterns-for-Java](https://github.com/n7tequila/DDD-Patterns-for-Java): the same methodology, review model, and merge-blocking rules, rewritten for the TypeScript type system and toolchain.
 
-> Status: work in progress. The skill body is being written in batches; see `docs/dev-log/`.
+> Status: complete (2026-11-03). SKILL.md, 20 references, 3 enforcement assets, a runnable example (34 tests, single-file build), and two eval iterations. Development log and review reports (Chinese): `docs/dev-log/`.
+
+## Evaluation Summary
+
+Two iterations, 40 runs, with and without the skill (`evals/results/`):
+
+- With the skill, every planted violation was found at the expected severity, and the compliant control produced no CRITICAL or HIGH finding.
+- On straightforward review tasks, a model without the skill already finds most of the same problems, so coverage gains there are small.
+- Reproducible gains: generated code uses branded identifiers (6/6 trials with the skill, 0/6 without); reviews surface issues outside the planted scope; explanations cite the binding documentation instead of hedging; output follows one structure.
 
 ## Repository Layout
 
